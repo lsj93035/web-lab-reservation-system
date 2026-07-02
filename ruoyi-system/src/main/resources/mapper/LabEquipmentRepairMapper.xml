@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.LabEquipmentRepairMapper">
+    
+    <resultMap type="LabEquipmentRepair" id="LabEquipmentRepairResult">
+        <result property="repairId"    column="repair_id"    />
+        <result property="labId"    column="lab_id"    />
+        <result property="equipmentName"    column="equipment_name"    />
+        <result property="reporterId"    column="reporter_id"    />
+        <result property="issueDescription"    column="issue_description"    />
+        <result property="status"    column="status"    />
+        <result property="handlerId"    column="handler_id"    />
+        <result property="handleRemark"    column="handle_remark"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectLabEquipmentRepairVo">
+        select repair_id, lab_id, equipment_name, reporter_id, issue_description, status, handler_id, handle_remark, create_time, update_time from lab_equipment_repair
+    </sql>
+
+    <select id="selectLabEquipmentRepairList" parameterType="LabEquipmentRepair" resultMap="LabEquipmentRepairResult">
+        <include refid="selectLabEquipmentRepairVo"/>
+        <where>  
+            <if test="equipmentName != null  and equipmentName != ''"> and equipment_name like concat('%', #{equipmentName}, '%')</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    
+    <select id="selectLabEquipmentRepairById" parameterType="Long" resultMap="LabEquipmentRepairResult">
+        <include refid="selectLabEquipmentRepairVo"/>
+        where repair_id = #{repairId}
+    </select>
+        
+    <insert id="insertLabEquipmentRepair" parameterType="LabEquipmentRepair" useGeneratedKeys="true" keyProperty="repairId">
+        insert into lab_equipment_repair
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="labId != null">lab_id,</if>
+            <if test="equipmentName != null and equipmentName != ''">equipment_name,</if>
+            <if test="reporterId != null">reporter_id,</if>
+            <if test="issueDescription != null">issue_description,</if>
+            <if test="status != null">status,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="labId != null">#{labId},</if>
+            <if test="equipmentName != null and equipmentName != ''">#{equipmentName},</if>
+            <if test="reporterId != null">#{reporterId},</if>
+            <if test="issueDescription != null">#{issueDescription},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createTime != null">sysdate(),</if>
+         </trim>
+    </insert>
+
+    <update id="updateLabEquipmentRepair" parameterType="LabEquipmentRepair">
+        update lab_equipment_repair
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="status != null">status = #{status},</if>
+            <if test="handlerId != null">handler_id = #{handlerId},</if>
+            <if test="handleRemark != null">handle_remark = #{handleRemark},</if>
+            <if test="updateTime != null">update_time = sysdate(),</if>
+        </trim>
+        where repair_id = #{repairId}
+    </update>
+
+</mapper>

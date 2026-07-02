@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meeting.mapper.SysLabMapper">
+
+    <resultMap type="com.meeting.domain.SysLab" id="SysLabResult">
+        <result property="labId" column="lab_id"/>
+        <result property="labName" column="lab_name"/>
+        <result property="building" column="building"/>
+        <result property="capacity" column="capacity"/>
+        <result property="status" column="status"/>
+        <result property="equipment" column="equipment"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectLabVo">
+        select lab_id, lab_name, building, capacity, status, equipment,
+               create_by, create_time, update_by, update_time, remark
+        from sys_lab
+    </sql>
+
+    <select id="selectLabList" parameterType="com.meeting.domain.SysLab" resultMap="SysLabResult">
+        <include refid="selectLabVo"/>
+        <where>
+            <if test="labName != null and labName != ''">
+                AND lab_name like concat('%', #{labName}, '%')
+            </if>
+            <if test="building != null and building != ''">
+                AND building = #{building}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="equipment != null and equipment != ''">
+                AND equipment like concat('%', #{equipment}, '%')
+            </if>
+            <if test="capacity != null">
+                AND capacity &gt;= #{capacity}
+            </if>
+        </where>
+        order by lab_id
+    </select>
+
+    <select id="selectLabById" parameterType="Integer" resultMap="SysLabResult">
+        <include refid="selectLabVo"/>
+        where lab_id = #{labId}
+    </select>
+
+    <insert id="insertLab" parameterType="com.meeting.domain.SysLab" useGeneratedKeys="true" keyProperty="labId">
+        insert into sys_lab (
+            <if test="labName != null and labName != ''">lab_name,</if>
+            <if test="building != null and building != ''">building,</if>
+            <if test="capacity != null">capacity,</if>
+            <if test="status != null">status,</if>
+            <if test="equipment != null and equipment != ''">equipment,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        ) values (
+            <if test="labName != null and labName != ''">#{labName},</if>
+            <if test="building != null and building != ''">#{building},</if>
+            <if test="capacity != null">#{capacity},</if>
+            <if test="status != null">#{status},</if>
+            <if test="equipment != null and equipment != ''">#{equipment},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateLab" parameterType="com.meeting.domain.SysLab">
+        update sys_lab
+        <set>
+            <if test="labName != null and labName != ''">lab_name = #{labName},</if>
+            <if test="building != null and building != ''">building = #{building},</if>
+            <if test="capacity != null">capacity = #{capacity},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="equipment != null">equipment = #{equipment},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where lab_id = #{labId}
+    </update>
+
+    <delete id="deleteLabById" parameterType="Integer">
+        delete from sys_lab where lab_id = #{labId}
+    </delete>
+
+    <delete id="deleteLabByIds" parameterType="Integer">
+        delete from sys_lab where lab_id in
+        <foreach item="labId" collection="array" open="(" separator="," close=")">
+            #{labId}
+        </foreach>
+    </delete>
+
+    <update id="changeLabStatus" parameterType="com.meeting.domain.SysLab">
+        update sys_lab
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where lab_id = #{labId}
+    </update>
+
+    <select id="selectBuildingList" resultType="String">
+        select distinct building from sys_lab where building is not null and building != '' order by building
+    </select>
+
+    <!-- 统计实验室总数 -->
+    <select id="countLabTotal" resultType="int">
+        select count(*) from sys_lab
+    </select>
+
+</mapper>

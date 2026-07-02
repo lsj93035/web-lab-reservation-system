@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meeting.mapper.SysRepairMapper">
+
+    <resultMap type="com.meeting.domain.SysRepair" id="SysRepairResult">
+        <result property="repairId" column="repair_id"/>
+        <result property="labId" column="lab_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="faultDesc" column="fault_desc"/>
+        <result property="repairStatus" column="repair_status"/>
+        <result property="submitTime" column="submit_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="labName" column="lab_name"/>
+        <result property="building" column="building"/>
+        <result property="userName" column="user_name"/>
+    </resultMap>
+
+    <sql id="selectRepairVo">
+        select r.repair_id, r.lab_id, r.user_id, r.fault_desc, r.repair_status,
+               r.submit_time, r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
+               l.lab_name, l.building
+        from sys_repair r
+        left join sys_lab l on r.lab_id = l.lab_id
+    </sql>
+
+    <!-- 新增报修 -->
+    <insert id="insertRepair" parameterType="com.meeting.domain.SysRepair" useGeneratedKeys="true" keyProperty="repairId">
+        insert into sys_repair (
+            lab_id, user_id, fault_desc, repair_status, submit_time,
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        ) values (
+            #{labId}, #{userId}, #{faultDesc}, 0, sysdate(),
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <!-- 查询我的报修列表 -->
+    <select id="listMyRepair" resultMap="SysRepairResult">
+        <include refid="selectRepairVo"/>
+        where r.user_id = #{userId}
+        <if test="labName != null and labName != ''">
+            AND l.lab_name like concat('%', #{labName}, '%')
+        </if>
+        <if test="repairStatus != null">
+            AND r.repair_status = #{repairStatus}
+        </if>
+        <if test="startTime != null">
+            AND r.submit_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND r.submit_time &lt;= #{endTime}
+        </if>
+        order by r.submit_time desc
+    </select>
+
+    <!-- 查询管理报修列表 -->
+    <select id="listManageRepair" resultMap="SysRepairResult">
+        <include refid="selectRepairVo"/>
+        <where>
+            <if test="labName != null and labName != ''">
+                AND l.lab_name like concat('%', #{labName}, '%')
+            </if>
+            <if test="faultDesc != null and faultDesc != ''">
+                AND r.fault_desc like concat('%', #{faultDesc}, '%')
+            </if>
+            <if test="repairStatus != null">
+                AND r.repair_status = #{repairStatus}
+            </if>
+        </where>
+        order by r.submit_time desc
+    </select>
+
+    <!-- 查询单个报修详情 -->
+    <select id="selectRepairById" parameterType="Integer" resultMap="SysRepairResult">
+        <include refid="selectRepairVo"/>
+        where r.repair_id = #{repairId}
+    </select>
+
+    <!-- 修改报修状态 -->
+    <update id="updateRepairStatus" parameterType="com.meeting.domain.SysRepair">
+        update sys_repair
+        <set>
+            <if test="repairStatus != null">repair_status = #{repairStatus},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where repair_id = #{repairId}
+    </update>
+
+    <!-- 删除报修 -->
+    <delete id="deleteRepairById" parameterType="Integer">
+        delete from sys_repair where repair_id = #{repairId}
+    </delete>
+
+    <!-- 统计待处理报修数量 -->
+    <select id="countPendingRepair" resultType="int">
+        select count(*) from sys_repair where repair_status = 0
+    </select>
+
+    <!-- 统计用户报修数量 -->
+    <select id="countByUserId" parameterType="Long" resultType="int">
+        select count(*) from sys_repair where user_id = #{userId}
+    </select>
+
+</mapper>

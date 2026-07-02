@@ -1,24 +1,104 @@
-# Compiled class file
-*.class
+######################################################################
+# Build Tools
 
-# Log file
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+######################################################################
+# IDE
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### JRebel ###
+rebel.xml
+
+### NetBeans ###
+nbproject/private/
+build/*
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+######################################################################
+# Others
 *.log
+*.xml.versionsBackup
+*.swp
 
-# BlueJ files
-*.ctxt
+!*/build/*.java
+!*/build/*.html
+!*/build/*.xml
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+ruoyi-ui/.DS_Store
+ruoyi-ui/node_modules/
+ruoyi-ui/dist/
+ruoyi-ui/npm-debug.log*
+ruoyi-ui/yarn-debug.log*
+ruoyi-ui/yarn-error.log*
+ruoyi-ui/**/*.log
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+ruoyi-ui/tests/**/coverage/
+ruoyi-ui/tests/e2e/reports
+ruoyi-ui/selenium-debug.log
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+# Editor directories and files
+ruoyi-ui/.idea
+ruoyi-ui/.vscode
+ruoyi-ui/*.suo
+ruoyi-ui/*.ntvs*
+ruoyi-ui/*.njsproj
+ruoyi-ui/*.sln
+ruoyi-ui/*.local
+
+ruoyi-ui/package-lock.json
+ruoyi-ui/yarn.lock
+
+######################################################################
+# Local tools / runtime bundles
+
+/.agents/
+/.claude/
+/.vscode/
+/apache-maven-*/
+/Navicat_*/
+/Redis/
+/node_modules/
+/SilentlyContinue/
+
+######################################################################
+# Local helper files and backups
+
+/CLAUDE.md
+/backend.log
+/package.json
+/package-lock.json
+/skills-lock.json
+数据库备份*.sql
+数据库完整备份*.sql
+数据库恢复*.sql
+*.bak
+*.tmp
+
+######################################################################
+# Uploaded files / generated artifacts
+
+uploadPath/
+logs/
+*.pid

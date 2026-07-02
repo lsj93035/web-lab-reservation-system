@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meeting.mapper.SysTeachingOccupancyMapper">
+
+    <resultMap type="com.meeting.domain.SysTeachingOccupancy" id="SysTeachingOccupancyResult">
+        <result property="occupyId" column="occupy_id"/>
+        <result property="teacherId" column="teacher_id"/>
+        <result property="labId" column="lab_id"/>
+        <result property="courseName" column="course_name"/>
+        <result property="occupyDate" column="occupy_date"/>
+        <result property="timeSlot" column="time_slot"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="labName" column="lab_name"/>
+        <result property="building" column="building"/>
+        <result property="teacherName" column="teacher_name"/>
+    </resultMap>
+
+    <sql id="selectOccupancyVo">
+        select o.occupy_id, o.teacher_id, o.lab_id, o.course_name, o.occupy_date, o.time_slot,
+               o.create_by, o.create_time, o.update_by, o.update_time,
+               l.lab_name, l.building,
+               u.nick_name as teacher_name
+        from sys_teaching_occupancy o
+        left join sys_lab l on o.lab_id = l.lab_id
+        left join sys_user u on o.teacher_id = u.user_id
+    </sql>
+
+    <!-- 查询教学占用列表 -->
+    <select id="selectOccupancyList" parameterType="com.meeting.domain.SysTeachingOccupancy" resultMap="SysTeachingOccupancyResult">
+        <include refid="selectOccupancyVo"/>
+        <where>
+            <if test="labId != null">
+                AND o.lab_id = #{labId}
+            </if>
+            <if test="teacherId != null">
+                AND o.teacher_id = #{teacherId}
+            </if>
+            <if test="courseName != null and courseName != ''">
+                AND o.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="occupyDate != null">
+                AND o.occupy_date = #{occupyDate}
+            </if>
+        </where>
+        order by o.occupy_date desc, o.time_slot
+    </select>
+
+    <!-- 查询冲突的教学占用（区间重叠判定） -->
+    <select id="queryConflictingOccupancy" resultType="com.meeting.domain.SysTeachingOccupancy">
+        select occupy_id, occupy_date, time_slot
+        from sys_teaching_occupancy
+        where lab_id = #{labId}
+          and occupy_date = #{occupyDate}
+          and STR_TO_DATE(SUBSTRING_INDEX(time_slot, '-', 1), '%H:%i') &lt; STR_TO_DATE(#{endTime}, '%H:%i')
+          and STR_TO_DATE(SUBSTRING_INDEX(time_slot, '-', -1), '%H:%i') &gt; STR_TO_DATE(#{startTime}, '%H:%i')
+    </select>
+
+    <!-- 新增教学占用 -->
+    <insert id="insertOccupancy" parameterType="com.meeting.domain.SysTeachingOccupancy" useGeneratedKeys="true" keyProperty="occupyId">
+        insert into sys_teaching_occupancy (
+            teacher_id, lab_id, course_name, occupy_date, time_slot,
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        ) values (
+            #{teacherId}, #{labId}, #{courseName}, #{occupyDate}, #{timeSlot},
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <!-- 删除教学占用 -->
+    <delete id="deleteOccupancyById" parameterType="Integer">
+        delete from sys_teaching_occupancy where occupy_id = #{occupyId}
+    </delete>
+
+    <!-- 批量删除教学占用 -->
+    <delete id="deleteOccupancyByIds" parameterType="Integer">
+        delete from sys_teaching_occupancy where occupy_id in
+        <foreach item="occupyId" collection="array" open="(" separator="," close=")">
+            #{occupyId}
+        </foreach>
+    </delete>
+
+    <!-- 查询单个教学占用详情 -->
+    <select id="selectOccupancyById" parameterType="Integer" resultMap="SysTeachingOccupancyResult">
+        <include refid="selectOccupancyVo"/>
+        where o.occupy_id = #{occupyId}
+    </select>
+
+</mapper>

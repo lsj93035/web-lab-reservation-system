@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meeting.mapper.SysReservationMapper">
+
+    <resultMap type="com.meeting.domain.SysReservation" id="SysReservationResult">
+        <result property="reserveId" column="reserve_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="labId" column="lab_id"/>
+        <result property="startDate" column="start_date"/>
+        <result property="endDate" column="end_date"/>
+        <result property="auditStatus" column="audit_status"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="labName" column="lab_name"/>
+        <result property="building" column="building"/>
+        <result property="equipment" column="equipment"/>
+        <result property="userName" column="user_name"/>
+    </resultMap>
+
+    <sql id="selectReservationVo">
+        select r.reserve_id, r.user_id, r.lab_id, r.start_date, r.end_date,
+               r.audit_status, r.remark, r.create_by, r.create_time,
+               r.update_by, r.update_time,
+               l.lab_name, l.building, l.equipment,
+               u.nick_name as user_name
+        from sys_reservation r
+        left join sys_lab l on r.lab_id = l.lab_id
+        left join sys_user u on r.user_id = u.user_id
+    </sql>
+
+    <!-- 查询可用实验室列表 -->
+    <select id="selectLabSelect" parameterType="com.meeting.domain.SysReservation" resultType="com.meeting.domain.SysLab">
+        select distinct l.lab_id, l.lab_name, l.building, l.capacity, l.status, l.equipment
+        from sys_lab l
+        where l.status = 0
+        <if test="labName != null and labName != ''">
+            AND l.lab_name like concat('%', #{labName}, '%')
+        </if>
+        <if test="building != null and building != ''">
+            AND l.building = #{building}
+        </if>
+        <if test="equipment != null and equipment != ''">
+            AND l.equipment like concat('%', #{equipment}, '%')
+        </if>
+        order by l.lab_id
+    </select>
+
+    <!-- 查询预约列表 -->
+    <select id="selectReservationList" resultMap="SysReservationResult">
+        <include refid="selectReservationVo"/>
+        where 1=1
+        <if test="labName != null and labName != ''">
+            AND l.lab_name like concat('%', #{labName}, '%')
+        </if>
+        <if test="building != null and building != ''">
+            AND l.building = #{building}
+        </if>
+        <if test="auditStatus != null">
+            AND r.audit_status = #{auditStatus}
+        </if>
+        order by r.create_time desc
+    </select>
+
+    <!-- 查询某实验室某天的已预约时间段 -->
+    <select id="queryReservationTimes" resultType="com.meeting.domain.SysReservation">
+        select reserve_id, start_date, end_date, audit_status
+        from sys_reservation
+        where lab_id = #{labId}
+          and DATE(start_date) = DATE(#{date})
+          and audit_status IN (0, 1)
+        order by start_date
+    </select>
+
+    <!-- 查询冲突的预约记录 -->
+    <select id="queryConflictingReservations" resultType="com.meeting.domain.SysReservation">
+        select reserve_id, start_date, end_date, audit_status
+        from sys_reservation
+        where lab_id = #{labId}
+          and audit_status IN (0, 1)
+          and start_date &lt; #{endDate}
+          and end_date &gt; #{startDate}
+    </select>
+
+    <!-- 查询冲突的预约记录（排除自身） -->
+    <select id="queryConflictingReservationsExcludeSelf" resultType="com.meeting.domain.SysReservation">
+        select reserve_id, start_date, end_date, audit_status
+        from sys_reservation
+        where lab_id = #{labId}
+          and audit_status IN (0, 1)
+          and reserve_id != #{reserveId}
+          and start_date &lt; #{endDate}
+          and end_date &gt; #{startDate}
+    </select>
+
+    <!-- 新增预约 -->
+    <insert id="insertReservation" parameterType="com.meeting.domain.SysReservation" useGeneratedKeys="true" keyProperty="reserveId">
+        insert into sys_reservation (
+            user_id, lab_id, start_date, end_date, audit_status,
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        ) values (
+            #{userId}, #{labId}, #{startDate}, #{endDate}, 0,
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <!-- 查询我的预约列表 -->
+    <select id="listMyReservations" resultMap="SysReservationResult">
+        <include refid="selectReservationVo"/>
+        where r.user_id = #{userId}
+        <if test="labName != null and labName != ''">
+            AND l.lab_name like concat('%', #{labName}, '%')
+        </if>
+        <if test="building != null and building != ''">
+            AND l.building = #{building}
+        </if>
+        <if test="startTime != null">
+            AND r.start_date &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND r.end_date &lt;= #{endTime}
+        </if>
+        <if test="auditStatus != null">
+            AND r.audit_status = #{auditStatus}
+        </if>
+        order by r.create_time desc
+    </select>
+
+    <!-- 查询单个预约详情 -->
+    <select id="selectReservationById" parameterType="Integer" resultMap="SysReservationResult">
+        <include refid="selectReservationVo"/>
+        where r.reserve_id = #{reserveId}
+    </select>
+
+    <!-- 修改预约 -->
+    <update id="updateReservation" parameterType="com.meeting.domain.SysReservation">
+        update sys_reservation
+        <set>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="auditStatus != null">audit_status = #{auditStatus},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where reserve_id = #{reserveId}
+    </update>
+
+    <!-- 删除预约 -->
+    <delete id="deleteReservationById" parameterType="Integer">
+        delete from sys_reservation where reserve_id = #{reserveId}
+    </delete>
+
+    <!-- 查询与我有关的预约 -->
+    <select id="listAboutMeReservations" resultMap="SysReservationResult">
+        <include refid="selectReservationVo"/>
+        where r.user_id = #{userId}
+        order by r.create_time desc
+    </select>
+
+    <!-- 查询待审核的预约列表 -->
+    <select id="listPendingReservations" resultMap="SysReservationResult">
+        <include refid="selectReservationVo"/>
+        where r.audit_status = 0
+        <if test="userId != null">
+            AND r.user_id = #{userId}
+        </if>
+        order by r.create_time desc
+    </select>
+
+    <!-- 审批预约 -->
+    <update id="auditReservation" parameterType="com.meeting.domain.SysReservation">
+        update sys_reservation
+        <set>
+            audit_status = #{auditStatus},
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where reserve_id = #{reserveId} and audit_status = 0
+    </update>
+
+    <!-- 查询某实验室的预约数量 -->
+    <select id="countReservationsByLabId" parameterType="Integer" resultType="int">
+        select count(*) from sys_reservation where lab_id = #{labId} and audit_status IN (0, 1)
+    </select>
+
+    <!-- 统计待审批预约数量 -->
+    <select id="countPendingAudit" resultType="int">
+        select count(*) from sys_reservation where audit_status = 0
+    </select>
+
+    <!-- 统计用户预约数量 -->
+    <select id="countByUserId" parameterType="Long" resultType="int">
+        select count(*) from sys_reservation where user_id = #{userId}
+    </select>
+
+    <!-- 统计今日预约数量 -->
+    <select id="countTodayReservations" resultType="int">
+        select count(*) from sys_reservation where DATE(create_time) = CURDATE()
+    </select>
+
+</mapper>
